@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum VideoStatus {
+  PLANNING
+  WAITING_FOR_SHOOT
+  EDITING
+  PREPARING_POST
+  PUBLISHED
+}
+
+enum VideoFormat {
+  SHORTS
+  LONG
+}
+
+enum ChecklistType {
+  SHOOTING
+  EDITING
+  PREPOST
+}
+
+enum TemplateType {
+  SCRIPT
+  CHECKLIST
+}
+
+model VideoProject {
+  id                 String                   @id @default(cuid())
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+  genre              String
+  videoFormat        VideoFormat
+  targetAudience     String
+  objective          String
+  scriptMemo         String                   @default("")
+  structureMemo      String                   @default("")
+  scheduledPublishAt DateTime?
+  tags               String                   @default("")
+  notes              String                   @default("")
+  status             VideoStatus              @default(PLANNING)
+  titleCandidates    TitleCandidate[]
+  thumbnailTexts     ThumbnailTextCandidate[]
+  scriptSections     ScriptSection[]
+  checklists         Checklist[]
+}
+
+model TitleCandidate {
+  id             String       @id @default(cuid())
+  text           String
+  order          Int          @default(0)
+  createdAt      DateTime     @default(now())
+  videoProject   VideoProject @relation(fields: [videoProjectId], references: [id], onDelete: Cascade)
+  videoProjectId String
+}
+
+model ThumbnailTextCandidate {
+  id             String       @id @default(cuid())
+  text           String
+  order          Int          @default(0)
+  createdAt      DateTime     @default(now())
+  videoProject   VideoProject @relation(fields: [videoProjectId], references: [id], onDelete: Cascade)
+  videoProjectId String
+}
+
+model ScriptSection {
+  id             String       @id @default(cuid())
+  kind           String
+  content        String       @default("")
+  order          Int          @default(0)
+  videoProject   VideoProject @relation(fields: [videoProjectId], references: [id], onDelete: Cascade)
+  videoProjectId String
+}
+
+model Checklist {
+  id             String          @id @default(cuid())
+  type           ChecklistType
+  title          String
+  order          Int             @default(0)
+  videoProject   VideoProject    @relation(fields: [videoProjectId], references: [id], onDelete: Cascade)
+  videoProjectId String
+  items          ChecklistItem[]
+}
+
+model ChecklistItem {
+  id          String    @id @default(cuid())
+  text        String
+  checked     Boolean   @default(false)
+  order       Int       @default(0)
+  checklist   Checklist @relation(fields: [checklistId], references: [id], onDelete: Cascade)
+  checklistId String
+}
+
+model Template {
+  id        String       @id @default(cuid())
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  name      String
+  type      TemplateType
+  content   String
+}
+
+model Setting {
+  id                     String @id @default("global")
+  titleMaxLength         Int    @default(45)
+  thumbnailTextMaxLength Int    @default(14)
+  bannedWords            String @default("")
+}
